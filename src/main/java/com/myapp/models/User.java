@@ -2,6 +2,8 @@ package com.myapp.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.Indexed;
 import org.springframework.data.annotation.CreatedDate;
@@ -11,16 +13,17 @@ import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
 @Indexed
 @Table(name = "users")
 @EntityListeners(AuditingEntityListener.class)
-@JsonIgnoreProperties(value = {"userCreated", "userEdited"}, 
-        allowGetters = true)
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +32,7 @@ public class User implements Serializable {
     @NotBlank
     @Field
     @Column(name = "user_email")
-    private String username;
+    private String userEmail;
 
     @Field
     private String userForename;
@@ -61,6 +64,16 @@ public class User implements Serializable {
     @LastModifiedDate
     private Date userEdited;
     
+    // trying to get link between user and exercise working ----------------------------
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.EAGER,
+            orphanRemoval = true
+    )
+    @Fetch(FetchMode.SELECT)
+    private List<Exercise> exercisesOwned = new ArrayList<>();
+    
     @Field
     private String userEditedBy;
     
@@ -69,9 +82,13 @@ public class User implements Serializable {
     
     public User() {}
     
+    public User(Long id) {
+    	this.userId = id;
+    }
+    
     public User(Long id, String email, String forename, String surname, String middleName, String userPassword) {
     	this.userId = id;
-    	this.username = email;
+    	this.userEmail = email;
     	this.userForename = forename;
     	this.userSurname = surname;
     	this.userMiddleName = middleName;
@@ -79,7 +96,7 @@ public class User implements Serializable {
     }
     
     public User(String email, String forename, String surname, String middleName, String userPassword) {
-    	this.username = email;
+    	this.userEmail = email;
     	this.userForename = forename;
     	this.userSurname = surname;
     	this.userMiddleName = middleName;
@@ -94,12 +111,12 @@ public class User implements Serializable {
 		this.userId = userId;
 	}
 
-	public String getUsername() {
-		return username;
+	public String getUserEmail() {
+		return userEmail;
 	}
 
-	public void setUsername(String userEmail) {
-		this.username = userEmail;
+	public void setUserEmail(String userEmail) {
+		this.userEmail = userEmail;
 	}
 
 	public String getUserForename() {

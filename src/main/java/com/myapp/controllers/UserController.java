@@ -3,7 +3,10 @@ package com.myapp.controllers;
 import com.myapp.exceptions.ResourceNotFoundException;
 import com.myapp.models.User;
 import com.myapp.payload.UserIdentityAvailability;
+import com.myapp.payload.UserSummary;
 import com.myapp.repository.UserRepository;
+import com.myapp.security.CurrentUser;
+import com.myapp.security.UserPrincipal;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -14,6 +17,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import javax.validation.Valid;
 
 @RestController
@@ -47,7 +52,7 @@ public class UserController {
 			return userRepository.findAll(pageReq);
 		} else {
 			return userRepository
-					.findByUsernameContainingOrUserForenameContainingOrUserSurnameContainingOrUserMiddleNameContaining(
+					.findByUserEmailContainingOrUserForenameContainingOrUserSurnameContainingOrUserMiddleNameContaining(
 					searchFor, searchFor, searchFor, searchFor, pageReq);
 		}
 	    
@@ -57,6 +62,13 @@ public class UserController {
 	public User createUser(@Valid @RequestBody User user) {
 	    return userRepository.save(user);
 	}
+	
+	@GetMapping("/users/me")
+    @PreAuthorize("hasRole('USER')")
+    public UserSummary getCurrentUser(@CurrentUser UserPrincipal currentUser) {
+        UserSummary userSummary = new UserSummary(currentUser.getId(), currentUser.getUsername(), currentUser.getName());
+        return userSummary;
+    }
 	
 	@GetMapping("/users/{id}")
 	public User getUserById(@PathVariable(value = "id") Long userId) {
@@ -71,7 +83,7 @@ public class UserController {
 	    User user = userRepository.findById(userId)
 	            .orElseThrow(() -> new ResourceNotFoundException("User", "userId", userId));
 
-	    user.setUsername(userDetails.getUsername());
+	    user.setUserEmail(userDetails.getUserEmail());
 	    user.setUserForename(userDetails.getUserForename());
 	    user.setUserSurname(userDetails.getUserSurname());
 	    user.setUserMiddleName(userDetails.getUserMiddleName());
@@ -92,7 +104,7 @@ public class UserController {
 	
 	@GetMapping("/user/checkUsernameAvailability")
     public UserIdentityAvailability checkUsernameAvailability(@RequestParam(value = "username") String username) {
-        Boolean isAvailable = !userRepository.existsByUsername(username);
+        Boolean isAvailable = !userRepository.existsByUserEmail(username);
         return new UserIdentityAvailability(isAvailable);
     }
 

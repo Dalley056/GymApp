@@ -32,14 +32,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
 //			String userEmail, String userForename, String userSurname, String userMiddleName,
 //			Pageable pageable);
 	
-	Page<User> findByUsernameContainingOrUserForenameContainingOrUserSurnameContainingOrUserMiddleNameContaining(
-			String username, String userForename, String userSurname, String userMiddleName,
+	Page<User> findByUserEmailContainingOrUserForenameContainingOrUserSurnameContainingOrUserMiddleNameContaining(
+			String userEmail, String userForename, String userSurname, String userMiddleName,
 			Pageable pageable);
 		
 	List<User> findByUserIdIn(List<Long> userIds);
 	
-    Optional<User> findByUsername(String username);
+    Optional<User> findByUserEmail(String userEmail);
 
-    Boolean existsByUsername(String username);
+    Boolean existsByUserEmail(String userEmail);
 
 }

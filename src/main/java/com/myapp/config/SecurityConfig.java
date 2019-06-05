@@ -19,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+// @EnableGlobalMethodSecurity allows use of @Secured, @RolesAllowed and @PreAuthorize annotation on methods
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(
@@ -27,19 +28,35 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
         prePostEnabled = true
 )
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+	
+	// Used by Spring to get details about a user for authentication
+	// Has a method which returns a UserDetails object to achieve this
     @Autowired
     CustomUserDetailsService customUserDetailsService;
 
+    // This is used to return the 402 error when a user tries to access
+    // a resource which they don't have permission to access
     @Autowired
     private JwtAuthenticationEntryPoint unauthorizedHandler;
 
+    // Used to implement a filter to:
+    //	read JWT authentication token from the Authorization header of all the requests
+    //	validate the token
+    //	loads user details associated with the token
+    //	sets the user details in SecurityContext so they can be used by Spring Security for authentication. We
+    //	can also access these details when we need to
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter();
     }
 
+    // used for authenticating a user
     @Override
     public void configure(AuthenticationManagerBuilder authenticationManagerBuilder) throws Exception {
+    	// .userDetailsService passes in a custom userDetailsService and returns
+    	// a DaoAuthenticationConfigurer instance which you can use to customise the DAO authentication
+    	// passwordEncoder is called on the DaoAuthenticationConfigurer to specify the password
+    	// encoder to use with the DaoAuthenticationProvider. We are using BCrypt (set in method lower down)
         authenticationManagerBuilder
                 .userDetailsService(customUserDetailsService)
                 .passwordEncoder(passwordEncoder());
@@ -56,6 +73,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return new BCryptPasswordEncoder();
     }
 
+    // configures security functionalities
+    // adds rules to protect resources
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
@@ -84,8 +103,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                         .permitAll()
                     .antMatchers("/api/user/checkUsernameAvailability", "/api/user/checkEmailAvailability")
                         .permitAll()
-                    .antMatchers(HttpMethod.GET, "/api/polls/**", "/api/users/**")
+                    .antMatchers(HttpMethod.GET, "/api/users/**", "/exercises/**")
                         .permitAll()
+                    .antMatchers(HttpMethod.POST, "/dummy/add/**")
+                    	.permitAll()
                     .anyRequest()
                         .authenticated();
 
